@@ -92,12 +92,15 @@ def manage_refund(request):
             merchant_id = data.get("merchant")
             user_id = data.get("user")
 
+            user = User.objects.get(id=user_id)
+            merchant = User.objects.get(id=merchant_id) 
+
             refund = Refund.objects.create(
                 main=main,
                 review=review,
                 caption=caption,
-                user=user_id,
-                merchant=merchant_id,
+                user=user.username,
+                merchant=merchant.username,
                 verdict="Pending",
                 status=False
             )
