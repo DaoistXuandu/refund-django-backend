@@ -20,7 +20,7 @@ def handle_login(request):
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
-                return JsonResponse({"error": "Invalid username or password"}, status=401)
+                return JsonResponse({"error": "Invalid username or password", "status": False}, status=401)
 
             if user.password == password:
                 return JsonResponse({"message": "Login successful", "username": user.username, "occupation": user.status, "id": user.id, "status": True})
@@ -28,9 +28,9 @@ def handle_login(request):
                 return JsonResponse({"error": "Invalid username or password", "status":False}, status=401)
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            return JsonResponse({"error": str(e), "status": False}, status=400)
 
-    return JsonResponse({"error": "Only POST allowed"}, status=405)   
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)   
 
 @csrf_exempt
 def get_total(request):
@@ -44,8 +44,8 @@ def get_total(request):
                 return JsonResponse({"error": "Invalid id", "status":False}, status=401)
             return JsonResponse({"total": user.total_refund, "status": True})
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"error": "Only POST allowed"}, status=405)    
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)    
 
 @csrf_exempt
 def get_all_item(request):
@@ -57,8 +57,8 @@ def get_all_item(request):
             item = list(Items.objects.filter(merchant_id=id).values())
             return JsonResponse({"items": item, "status": True})
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"error": "Only POST allowed"}, status=405)     
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)     
 
 @csrf_exempt
 def get_item(request):
@@ -77,8 +77,8 @@ def get_item(request):
             }
             return JsonResponse({"item": item_data, "status": True})
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"error": "Only POST allowed"}, status=405)       
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)       
 
 @csrf_exempt
 def manage_refund(request):
@@ -120,8 +120,8 @@ def manage_refund(request):
             refund.save()
             return JsonResponse({"result": result, "status": True})
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"error": "Only POST allowed"}, status=405)   
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)   
 
 @csrf_exempt
 def get_all_refund(request):
@@ -138,5 +138,46 @@ def get_all_refund(request):
 
             return JsonResponse({"refund": item, "status": True})
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"error": "Only POST allowed"}, status=405)       
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)       
+
+@csrf_exempt
+def get_refund(request):
+    if request.method == "PATCH":
+        try:
+            data = json.loads(request.body)  
+            id = data.get("id")
+
+            item = Refund.objects.get(id=id)
+
+            refund = {
+                "id": item.id,
+                "main_image": item.main,
+                "review_image": item.review,
+                "caption": item.caption,
+                "item_id": item.item_id,
+                "status": item.status
+            }
+
+            return JsonResponse({"refund": refund, "status": True})
+        except Exception as e:
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)       
+
+@csrf_exempt
+def update_status_refund(request):
+    if request.method == "PATCH":
+        try:
+            data = json.loads(request.body)  
+            id = data.get("id")
+            verdict = data.get("verdict")
+
+            item = Refund.objects.get(id=id)
+            item.verdict = verdict
+            item.status = True
+            item.save()
+
+            return JsonResponse({"status": True})
+        except Exception as e:
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)       

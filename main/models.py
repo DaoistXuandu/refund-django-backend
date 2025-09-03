@@ -27,6 +27,7 @@ class Refund(models.Model):
     review = models.CharField()
     caption = models.TextField()
     user = models.CharField()
+    item_id = models.UUIDField()
     merchant = models.CharField()
     verdict = models.CharField()
     status = models.BooleanField()
