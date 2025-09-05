@@ -91,6 +91,7 @@ def manage_refund(request):
 
             merchant_id = data.get("merchant")
             user_id = data.get("user")
+            item_id = data.get("item_id")
 
             user = User.objects.get(id=user_id)
             merchant = User.objects.get(id=merchant_id) 
@@ -100,10 +101,14 @@ def manage_refund(request):
                 review=review,
                 caption=caption,
                 user=user.username,
+                item_id=item_id,
                 merchant=merchant.username,
                 verdict="Pending",
                 status=False
             )
+
+            merchant.total_refund += 1
+            merchant.save()
 
             client = Client("cavalierplance/gradio-refund-predicter")
             result = client.predict(
@@ -113,7 +118,7 @@ def manage_refund(request):
                     api_name="/predict"
             )
 
-            if "0" in result:
+            if "1" in result:
                 refund.verdict = "Valid"
             else:
                 refund.verdict = "Invalid"

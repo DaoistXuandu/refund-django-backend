@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 import uuid
 
 class User(models.Model):
@@ -31,3 +32,4 @@ class Refund(models.Model):
     merchant = models.CharField()
     verdict = models.CharField()
     status = models.BooleanField()
+    last_updated = models.DateTimeField(default=timezone.now)
