@@ -11,5 +11,6 @@ urlpatterns = [
     path("refund", views.manage_refund, name="handle_refund"),
     path("item-refund", views.get_all_refund, name="handle_get_refund"),  
     path("get-refund", views.get_refund, name="get_a_refund"),  
-    path("update-refund", views.update_status_refund, name="update_refund"),  
+    path("update-refund", views.update_status_refund, name="update_refund"), 
+    path("update-refund-time", views.update_last_refund, name="update_refund_time") 
 ]

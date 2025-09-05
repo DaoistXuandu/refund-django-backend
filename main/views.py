@@ -2,6 +2,7 @@ from django.shortcuts import render, HttpResponse
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.hashers import check_password  # if you store hashed passwords
+from django.utils import timezone
 from gradio_client import Client, handle_file
 import json
 
@@ -157,11 +158,13 @@ def get_refund(request):
 
             refund = {
                 "id": item.id,
-                "main_image": item.main,
-                "review_image": item.review,
+                "main": item.main,
+                "review": item.review,
                 "caption": item.caption,
                 "item_id": item.item_id,
-                "status": item.status
+                "status": item.status,
+                "merchant": item.merchant,
+                "user": item.user
             }
 
             return JsonResponse({"refund": refund, "status": True})
@@ -180,6 +183,22 @@ def update_status_refund(request):
             item = Refund.objects.get(id=id)
             item.verdict = verdict
             item.status = True
+            item.save()
+
+            return JsonResponse({"status": True})
+        except Exception as e:
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)       
+
+@csrf_exempt
+def update_last_refund(request):
+    if request.method == "PATCH":
+        try:
+            data = json.loads(request.body)  
+            id = data.get("id")
+
+            item = Refund.objects.get(id=id)
+            item.last_updated = timezone.now()
             item.save()
 
             return JsonResponse({"status": True})
