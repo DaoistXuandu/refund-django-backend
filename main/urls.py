@@ -12,5 +12,8 @@ urlpatterns = [
     path("item-refund", views.get_all_refund, name="handle_get_refund"),  
     path("get-refund", views.get_refund, name="get_a_refund"),  
     path("update-refund", views.update_status_refund, name="update_refund"), 
-    path("update-refund-time", views.update_last_refund, name="update_refund_time") 
+    path("update-refund-time", views.update_last_refund, name="update_refund_time"),
+
+    path("v1/predict", views.external_check_refund, name="predict"),
+    path("v1/predict-bulk", views.external_check_refund_bulk, name="predict_bulk") 
 ]

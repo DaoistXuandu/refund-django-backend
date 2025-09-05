@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import check_password  # if you store hashed pa
 from django.utils import timezone
 from gradio_client import Client, handle_file
 import json
+import requests
 
 from main.models import User, Items, Refund
 
@@ -205,3 +206,95 @@ def update_last_refund(request):
         except Exception as e:
             return JsonResponse({"error": str(e), "status": False}, status=400)
     return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)       
+
+def is_url_reachable(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+    }
+    try:
+        response = requests.head(url, headers=headers, allow_redirects=True, timeout=5)
+        print(response)
+        return response.status_code < 400
+    except requests.RequestException:
+        return False
+
+def is_blank(str):
+    if(str == None or str == ""):
+        return True
+    return False
+
+@csrf_exempt
+def external_check_refund(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)  
+
+            image = data.get("image", {}) 
+            main_image = image.get("main")
+            review_image = image.get("review")
+            description = data.get("description")
+
+            if(is_blank(main_image) or is_blank(review_image) or is_blank(description)):
+                return JsonResponse({"message": "All field must be present", "status": False}, status=400)
+
+            if(not is_url_reachable(main_image)  or not is_url_reachable(review_image)):
+                return JsonResponse({"message": "Image urls is invallid", "status": False}, status=400) 
+    
+            client = Client("cavalierplance/gradio-refund-predicter")
+            result = client.predict(
+                    image_main=handle_file(main_image),
+                    image_review=handle_file(review_image),
+                    caption=description,
+                    api_name="/predict"
+            )
+
+            if "1" in result:
+                return JsonResponse({"Prediction": "Valid", "status": True})
+            else:
+                return JsonResponse({"Prediction": "Invalid", "status": True})
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405) 
+
+@csrf_exempt
+def external_check_refund_bulk(request):
+    if request.method == "POST":
+        try:
+            datas = json.loads(request.body)  
+            jobs = []
+            for data in datas:
+                image = data.get("image", {}) 
+                main_image = image.get("main")
+                review_image = image.get("review")
+                description = data.get("description")
+
+                if(is_blank(main_image) or is_blank(review_image) or is_blank(description)):
+                    return JsonResponse({"message": "All field must be present", "status": False}, status=400)
+
+                if(not is_url_reachable(main_image)  or not is_url_reachable(review_image)):
+                    return JsonResponse({"message": "Image urls is invallid", "status": False}, status=400) 
+        
+                client = Client("cavalierplance/gradio-refund-predicter")
+                jobs.append(client.submit(
+                    image_main=handle_file(main_image),
+                    image_review=handle_file(review_image),
+                    caption=description,
+                    api_name="/predict"
+                ))
+
+                results = []
+                for job in jobs:
+                    if("1" in job.result()):
+                        results.append("Valid")  
+                    else:
+                        results.append("Invalid")  
+
+            return JsonResponse({"Prediction": results, "status": True})
+
+        except Exception as e:
+            return JsonResponse({"error": str(e), "status": False}, status=400)
+    return JsonResponse({"error": "Only POST allowed", "status": False}, status=405)   
